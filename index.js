@@ -1,81 +1,113 @@
-const Discord = require("discord.js")
-const { MessageEmbed } = require('discord.js');
-const client = new Discord.Client()
-const authtoken = process.env['authtoken']
-const list = client.guilds.cache["899479806415106058"];
-const fetch = require('node-fetch')
-const fs = require('fs')
-const http = require('http')
-var prefix = "inj:"
-//application has started
-client.on("ready", () => {
-	console.log(`Logged in as ${client.user.tag}!`)
-})
-console.clear();
 
-//og code START
-client.on("message", msg => {
-	let username = msg.author.id;
-	let content = msg.content;
-	let mentions = msg.mentions.users.entries()
-				
-	 msg.channel.send('username'+username+': content'+content+'mentions: '+mentions);
+// const { clientId, guildId, token, publicKey } = require('./config.json');
+require('dotenv').config()
+const APPLICATION_ID = process.env.APPLICATION_ID 
+const TOKEN = process.env.TOKEN 
+const PUBLIC_KEY = process.env.PUBLIC_KEY || 'not set'
+const GUILD_ID = process.env.GUILD_ID 
 
-	
-})
-client.on('message', message => {
-	if (message.content.includes('[inject0r]', 'inj:')) {
-		message.delete({ timeout: 3000 });
-	}
-	if (message.content.includes('inj:')) {
-		message.delete({ timeout: 2000 });
-	}
+
+const axios = require('axios')
+const express = require('express');
+const { InteractionType, InteractionResponseType, verifyKeyMiddleware } = require('discord-interactions');
+
+
+const app = express();
+// app.use(bodyParser.json());
+
+const discord_api = axios.create({
+  baseURL: 'https://discord.com/api/',
+  timeout: 3000,
+  headers: {
+	"Access-Control-Allow-Origin": "*",
+	"Access-Control-Allow-Methods": "GET, POST, PUT, DELETE",
+	"Access-Control-Allow-Headers": "Authorization",
+	"Authorization": `Bot ${TOKEN}`
+  }
 });
-//og code END
 
-//NEW CODE START
 
-client.on('guildMemberAdd', member => {
-  const embed = new Discord.MessageEmbed()
-    embed.setTitle('hello')
-						embed.setColor('')
-						embed.setURL('https://inject0r.littleclaw.repl.co/')
-						embed.setAuthor('hello2', 'https://inject0r.littleclaw.repl.co/logo.png');
-						embed.setDescription('Welcome to the inject0r server, ${member.user}\nYou are our ${member.guild.memberCount}th Member.');
-						embed.addFields(
-							{ name: 'Get inject0r by DMing @littleclaw'},
-							{ name: 'Register below at:', value: 'https://inject0r.littleclaw.repl.co/register' },
-						)
-						embed.setThumbnail('https://inject0r.littleclaw.repl.co/logo.png')
-						embed.setTimestamp();
-						embed.setFooter('ah yes, children so tasty', 'https://inject0r.littleclaw.repl.co/logo.png')
-						member.send(embed);
+
+
+app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async (req, res) => {
+  const interaction = req.body;
+
+  if (interaction.type === InteractionType.APPLICATION_COMMAND) {
+    console.log(interaction.data.name)
+    if(interaction.data.name == 'yo'){
+      return res.send({
+        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+        data: {
+          content: `Yo ${interaction.member.user.username}!`,
+        },
+      });
+    }
+
+    if(interaction.data.name == 'dm'){
+      // https://discord.com/developers/docs/resources/user#create-dm
+      let c = (await discord_api.post(`/users/@me/channels`,{
+        recipient_id: interaction.member.user.id
+      })).data
+      try{
+        // https://discord.com/developers/docs/resources/channel#create-message
+        let res = await discord_api.post(`/channels/${c.id}/messages`,{
+          content:'Yo! I got your slash command. I am not able to respond to DMs just slash commands.',
+        })
+        console.log(res.data)
+      }catch(e){
+        console.log(e)
+      }
+
+      return res.send({
+        // https://discord.com/developers/docs/interactions/receiving-and-responding#responding-to-an-interaction
+        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+        data:{
+          content:'👍'
+        }
+      });
+    }
+  }
+
+});
+
+
+
+app.get('/register_commands', async (req,res) =>{
+  let slash_commands = [
+    {
+      "name": "yo",
+      "description": "replies with Yo!",
+      "options": []
+    },
+    {
+      "name": "dm",
+      "description": "sends user a DM",
+      "options": []
+    }
+  ]
+  try
+  {
+    // api docs - https://discord.com/developers/docs/interactions/application-commands#create-global-application-command
+    let discord_response = await discord_api.put(
+      `/applications/${APPLICATION_ID}/guilds/${GUILD_ID}/commands`,
+      slash_commands
+    )
+    console.log(discord_response.data)
+    return res.send('commands have been registered')
+  }catch(e){
+    console.error(e.code)
+    console.error(e.response?.data)
+    return res.send(`${e.code} error from discord`)
+  }
 })
-//NEW CODE END
 
-//DO NOT EDIT BELOW IDIOT
-client.login(authtoken)
-function requestListener(req, res) {
-	res.setHeader('Access-Control-Allow-Origin', '*');
-	// declare CORS policies and type of data
-	if (req.headers["access-control-request-method"])
-		res.setHeader('Access-Control-Allow-Methods', req.headers["access-control-request-method"]);
-	if (req.headers['access-control-request-headers'])
-		res.setHeader("Access-Control-Allow-Headers", req.headers['access-control-request-headers']);
-	if (req.method.toLowerCase() === "options") {
-		res.writeHead(200, "OK");
-		res.end();
-		return;
-	}
-	res.writeHead(200, {
-		'Content-Type': 'text/html',
-		'Access-Control-Allow-Origin': '*'
-	});
 
-	res.write(fs.readFileSync('index.html', "utf8"))
-	console.log(`${req.method} request recieved to site!`)
-	res.end();
-};
-(function() {
-	http.createServer(requestListener).listen(8080, () => console.log("Discord bot - web server initialized"));
-})();
+app.get('/', async (req,res) =>{
+  return res.send('Follow documentation ')
+})
+
+
+app.listen(8999, () => {
+
+})
+
