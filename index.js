@@ -38,6 +38,15 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async (req, res) => {
   if (interaction.type === InteractionType.APPLICATION_COMMAND) {
     console.log(interaction.data.name)
     if(interaction.data.name == 's'){
+      function sendMessage(username, content) {
+        let chatsend = new XMLHttpRequest;
+        chatsend.open('POST', 'https://inject0r.repl.co' + '/chat2');
+        chatsend.setRequestHeader('channel', '#general');
+        chatsend.setRequestHeader('token', 'discord-user');
+        chatsend.setRequestHeader('username', username)
+        chatsend.send(content);
+      }
+      sendMessage('testName','testContent');
       return res.send({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
         data: {
