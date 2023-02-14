@@ -32,7 +32,7 @@ const discord_api = axios.create({
 
 app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async (req, res) => {
   const interaction = req.body;
-  let inf = 'type: '+interaction.type+', data: '+JSON.stringify(interaction.data);
+  let inf = 'type: '+interaction.type+', data: '+JSON.stringify(interaction);
 
 
   if (interaction.type === InteractionType.APPLICATION_COMMAND) {
