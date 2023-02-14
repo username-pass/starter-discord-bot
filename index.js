@@ -32,7 +32,7 @@ const discord_api = axios.create({
 
 app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async (req, res) => {
   const interaction = req.body;
-  res.send('type: '+interaction.type+', data name: '+interaction.data.name);
+  let inf = 'type: '+interaction.type+', data name: '+interaction.data.name;
 
 
   if (interaction.type === InteractionType.APPLICATION_COMMAND) {
@@ -41,7 +41,7 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async (req, res) => {
       return res.send({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
         data: {
-          content: `Yo ${interaction.member.user.username}!`,
+          content: `Yo ${interaction.member.user.username}! \n ${inf}`,
         },
       });
     }
