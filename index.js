@@ -80,7 +80,7 @@ app.get('/register_commands', async (req,res) =>{
     {
       "name": "s",
       "description": "send message to inj chat",
-      "options": []
+      "options": ["test option"]
     },
     {
       "name": "dm",
